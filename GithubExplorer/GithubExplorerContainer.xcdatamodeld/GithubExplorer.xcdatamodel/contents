@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="21754" systemVersion="22E252" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
+    <entity name="RepoEntity" representedClassName="RepoEntity" syncable="YES" codeGenerationType="class">
+        <attribute name="id" optional="YES" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="name" optional="YES" attributeType="String"/>
+        <attribute name="ownerLogin" optional="YES" attributeType="String"/>
+        <relationship name="owner" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="UserEntity" inverseName="repos" inverseEntity="UserEntity"/>
+    </entity>
+    <entity name="UserEntity" representedClassName="UserEntity" syncable="YES" codeGenerationType="class">
+        <attribute name="avatarURL" optional="YES" attributeType="String"/>
+        <attribute name="id" optional="YES" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="login" optional="YES" attributeType="String"/>
+        <attribute name="reposURL" optional="YES" attributeType="String"/>
+        <relationship name="repos" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="RepoEntity" inverseName="owner" inverseEntity="RepoEntity"/>
+    </entity>
+</model>
