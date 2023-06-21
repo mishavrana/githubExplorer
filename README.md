@@ -1,3 +1,3 @@
 # GitHubExplorer demo app
 
-<img src="/assets/Demo.gif">
+<img src="/Assets/Demo.gif">
