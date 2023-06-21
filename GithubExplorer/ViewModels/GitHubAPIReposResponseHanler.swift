@@ -13,7 +13,7 @@ class GitHubAPIRepoResponseHandler: ObservableObject {
     @Published var isLoading: Bool = true
     @Published var error: Error?
     
-    var user: UserEntity? = nil
+    var user: UserEntity
 
     let manager = CoreDataManager.instance
     
@@ -104,7 +104,7 @@ class GitHubAPIRepoResponseHandler: ObservableObject {
         isLoading = true
         let request = NSFetchRequest<RepoEntity>(entityName: "RepoEntity")
         request.sortDescriptors = [NSSortDescriptor (key: "ownerLogin", ascending: true)]
-        request.predicate = NSPredicate(format: "ownerLogin = %@", user?.login ?? "")
+        request.predicate = NSPredicate(format: "ownerLogin = %@", user.login ?? "")
         request.fetchLimit = coreDateReposLimit
         
         do {

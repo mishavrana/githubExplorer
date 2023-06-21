@@ -52,7 +52,7 @@ extension RepoEntity {
 }
 
 extension RepoEntity {
-    static func updateReposInCoreData(from repo: Repo, for user: UserEntity?, context: NSManagedObjectContext) {
+    static func updateReposInCoreData(from repo: Repo, for user: UserEntity, context: NSManagedObjectContext) {
         let request = fetchRequest(NSPredicate(format: "name = %@", repo.name))
         let results = (try? context.fetch(request)) ?? []
         let newRepo = results.last ?? RepoEntity(context: context)
@@ -60,8 +60,8 @@ extension RepoEntity {
         newRepo.ownerLogin = repo.owner.login
         newRepo.name = repo.name
         newRepo.id = Int32(repo.id)
+        newRepo.owner = user
         
         try? context.save()
     }
 }
-

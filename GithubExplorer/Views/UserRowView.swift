@@ -23,7 +23,10 @@ struct UserRowView: View {
             } placeholder: {
                 Circle()
                     .frame(width: 32, height: 32)
-                    .background(Color(.systemGray5))
+                    .overlay (
+                        Image(systemName: "questionmark")
+                            .foregroundColor(.gray)
+                    )
             }
             
             Text(user.login ?? "")
