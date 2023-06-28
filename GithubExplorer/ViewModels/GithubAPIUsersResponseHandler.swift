@@ -35,7 +35,7 @@ class GithubAPIUsersResponseHandler: ObservableObject {
     var allUsersFetched = false
     
     @MainActor
-    func fetchUsers() async throws {
+    private func fetchUsers() async throws {
         isLoading = true
         do {
             guard let url = URL(string: urlString) else { throw UserErrors.invalidURL }
@@ -58,28 +58,31 @@ class GithubAPIUsersResponseHandler: ObservableObject {
             self.error = error
         }
         
+        loadUsersFromCache()
+        
         isLoading = false
-        getUsers()
     }
 
-    func loadUserData() {
+    private func loadUsersData() {
         Task(priority: .medium) {
             try await fetchUsers()
         }
     }
     
-    func loadMore() {
+    private func fetchMore() {
         self.page = Int(self.users.last?.id ?? 0)
-        self.loadUserData()
+        self.loadUsersData()
     }
     
     // MARK: - CoreData Intents
     
-    var coreDataReturnedTheLastUser: Bool {
+    private var coreDataReturnedTheLastUser: Bool {
         return !users.isEmpty && users.count < coreDateUsersLimit
     }
     
-    func loadUsersFromCash() {
+    private func loadUsersFromCache() {
+        isLoading = true
+        
         let request = NSFetchRequest<UserEntity>(entityName: "UserEntity")
         request.fetchLimit = coreDateUsersLimit
         
@@ -88,46 +91,42 @@ class GithubAPIUsersResponseHandler: ObservableObject {
         } catch {
             self.error = UserErrors.coreDataError
         }
+        
+        isLoading = false
     }
     
-    func loadMoreUsersFromCash() {
+    private func increaseCoreDataUserLimit() {
         coreDateUsersLimit += ViewModelConstants.pageLimit
-        guard coreDataReturnedTheLastUser else { return }
-        getUsers()
     }
     
-    func freeCash() {
+    private func releaseUsersCache() {
           let fetchRequest1: NSFetchRequest<NSFetchRequestResult> = UserEntity.fetchRequest()
           let batchDeleteRequest1 = NSBatchDeleteRequest(fetchRequest: fetchRequest1)
         _ = try? manager.context.execute(batchDeleteRequest1)
         
-        let fetchRequest2: NSFetchRequest<NSFetchRequestResult> = RepoEntity.fetchRequest()
-        let batchDeleteRequest2 = NSBatchDeleteRequest(fetchRequest: fetchRequest2)
-      _ = try? manager.context.execute(batchDeleteRequest2)
-        
-        handleRefresh()
     }
     
     // MARK: - Intents
     
     func getUsers() {
-        loadUsersFromCash()
+        loadUsersFromCache()
         
         if users.isEmpty && error == nil {
             if !allUsersFetched {
-                loadUserData()
+                loadUsersData()
             }
         }
         
         if coreDataReturnedTheLastUser && error == nil {
             if !allUsersFetched {
-                loadMore()
+                fetchMore()
             }
         }
     }
     
-    func removeItems(at offsets: IndexSet) {
-        users.remove(atOffsets: offsets)
+    func loadMoreUsers() {
+        increaseCoreDataUserLimit()
+        getUsers()
     }
     
     func handleRefresh() {
@@ -137,6 +136,11 @@ class GithubAPIUsersResponseHandler: ObservableObject {
         error = nil
         page = 0
         getUsers()
+    }
+    
+    func releaseCache() {
+        releaseUsersCache()
+        handleRefresh()
     }
 }
 

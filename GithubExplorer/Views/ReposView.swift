@@ -24,7 +24,7 @@ struct ReposView: View {
                 Text("\(repo.name ?? "")")
                     .onAppear {
                         if repo.id == gitHubAPIRepoResponseHandler.repos.last?.id {
-                            gitHubAPIRepoResponseHandler.loadMoreReposFromCash()
+                            gitHubAPIRepoResponseHandler.loadMoreRepos()
                         }
                     }
             }

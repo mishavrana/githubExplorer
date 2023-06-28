@@ -40,7 +40,7 @@ class GitHubAPIRepoResponseHandler: ObservableObject {
     var allReposFetched = false
     
     @MainActor
-    func fetchRepos() async throws {
+    private func fetchRepos() async throws {
         isLoading = true
         
         do {
@@ -69,38 +69,31 @@ class GitHubAPIRepoResponseHandler: ObservableObject {
         } catch {
             self.error = error
         }
-            
+        
+        loadReposFromCache()
+        
         isLoading = false
-        getRepos()
     }
     
-    func loadRepoData() {
+    private func loadRepoData() {
         Task(priority: .medium) {
             try await fetchRepos()
         }
+        loadReposFromCache()
     }
     
-    func loadMore() {
+    private func fetchMore() {
         self.page += 1
-        loadRepoData()
-    }
-    
-    func handleRefresh() {
-        allReposFetched = false
-        coreDateReposLimit = ViewModelConstants.pageLimit
-        error = nil
-        repos = []
-        page = 0
         loadRepoData()
     }
     
     // MARK: - CoreData Intents
     
-    var coreDataReturnedTheLastRepo: Bool {
+    private var coreDataReturnedTheLastRepo: Bool {
         return !repos.isEmpty && repos.count < coreDateReposLimit
     }
     
-    func loadReposFromCash() {
+    private func loadReposFromCache() {
         isLoading = true
         let request = NSFetchRequest<RepoEntity>(entityName: "RepoEntity")
         request.sortDescriptors = [NSSortDescriptor (key: "ownerLogin", ascending: true)]
@@ -116,15 +109,14 @@ class GitHubAPIRepoResponseHandler: ObservableObject {
         isLoading = false
     }
     
-    func loadMoreReposFromCash() {
+    private func increaseCoreDataReposLimit() {
         coreDateReposLimit += ViewModelConstants.pageLimit
-        getRepos()
     }
     
     // MARK: - Intents
     
     func getRepos() {
-        loadReposFromCash()
+        loadReposFromCache()
         
         if repos.isEmpty && error == nil {
             if !allReposFetched {
@@ -134,8 +126,22 @@ class GitHubAPIRepoResponseHandler: ObservableObject {
         
         if coreDataReturnedTheLastRepo && error == nil {
             if !allReposFetched {
-                loadMore()
+                fetchMore()
             }
         }
+    }
+    
+    func loadMoreRepos() {
+        increaseCoreDataReposLimit()
+        getRepos()
+    }
+    
+    func handleRefresh() {
+        allReposFetched = false
+        coreDateReposLimit = ViewModelConstants.pageLimit
+        error = nil
+        repos = []
+        page = 0
+        getRepos()
     }
 }

@@ -14,14 +14,14 @@ struct ContentView: View {
     var body: some View {
         NavigationView {
             List {
-                ForEach($gitHubAPIResponseHandler.users) { $user in
+                ForEach(gitHubAPIResponseHandler.users) { user in
                     NavigationLink {
                         ReposView(user: user)
                     } label: {
                         UserRowView(user: user)
                             .onAppear {
                                 if user.id == gitHubAPIResponseHandler.users.last?.id {
-                                    gitHubAPIResponseHandler.loadMoreUsersFromCash()
+                                    gitHubAPIResponseHandler.loadMoreUsers()
                                 }
                             }
                     }
@@ -51,7 +51,7 @@ struct ContentView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Release cashe") {
-                        gitHubAPIResponseHandler.freeCash()
+                        gitHubAPIResponseHandler.releaseCache()
                     }
                 }
             }
