@@ -40,6 +40,10 @@ extension UserEntity {
     }
 }
 
+extension UserEntity {
+    static var defaultValue = UserEntity(context: CoreDataManager.instance.context)
+}
+
 // MARK: - RepoEntity
 
 extension RepoEntity {

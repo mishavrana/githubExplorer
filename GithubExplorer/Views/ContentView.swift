@@ -50,7 +50,7 @@ struct ContentView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Release cashe") {
+                    Button("Release cache") {
                         gitHubAPIResponseHandler.releaseCache()
                     }
                 }

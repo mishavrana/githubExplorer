@@ -10,64 +10,83 @@ import Combine
 @testable import GithubExplorer
 
 final class GithubAPIReposResponseHandler_Tests: XCTestCase {
-
-    var gitHubAPIUsersResponseHandler: GithubAPIUsersResponseHandler?
+    
+    var user: UserEntity?
+    var viewModel: GitHubAPIRepoResponseHandler?
+    var usersViewModel = GithubAPIUsersResponseHandler()
     var cancellables = Set<AnyCancellable>()
 
+    
     override func setUpWithError() throws {
-        gitHubAPIUsersResponseHandler = GithubAPIUsersResponseHandler()
+        user = UserEntity.defaultValue
+        user?.reposURL = "https://api.github.com/users/mojombo/repos"
+        user?.login = "mojombo"
+        user?.id = 1
+        
+        if let user = user {
+            viewModel = GitHubAPIRepoResponseHandler(user: user, url: user.reposURL ?? "")
+        }
     }
 
     override func tearDownWithError() throws {
-        gitHubAPIUsersResponseHandler = nil
+        usersViewModel.releaseCache()
+        viewModel = nil
     }
     
-    func test_GithubAPIReposResponseHandler_loadRepoData_shouldReturnItems() {
+    func test_GithubAPIReposResponseHandler_loadReposData_shouldReturnItems() {
         // Given
-        let user = gitHubAPIUsersResponseHandler?.users.first
         
         // When
-        XCTAssertTrue((user != nil))
+        let expectation = XCTestExpectation(description: "Should return items after 10 seconds")
         
-        let gitHubAPIReposResponseHandler = GitHubAPIRepoResponseHandler(user: user!, url: user!.reposURL ?? "")
-        let expectation = XCTestExpectation(description: "Should return items after 5 seconds")
-        
-        gitHubAPIReposResponseHandler.$repos
-            .dropFirst()
+        viewModel?.$repos
             .sink { returnedItems in
-                expectation.fulfill()
+                if returnedItems.count > 0 {
+                    expectation.fulfill()
+                }
             }
             .store(in: &cancellables)
-        
-        gitHubAPIReposResponseHandler.getRepos()
+            
+        viewModel?.getRepos()
         
         // Then
-        wait(for: [expectation], timeout: 5)
-        XCTAssertGreaterThan(gitHubAPIReposResponseHandler.repos.count, 0)
+        wait(for: [expectation], timeout: 10)
+        XCTAssertGreaterThan(viewModel!.repos.count, 0)
     }
     
-    func test_GithubAPIReposResponseHandler_loadMoreRepos_shouldReturnMoreItemsThanFromStart() {
+    func test_GithubAPIReposResponseHandler_loadMoreRepos_shouldReturnMoreItemsThanFromTheStart() {
         // Given
-        let numberOfRepos = gitHubAPIUsersResponseHandler?.users.count ?? ViewModelConstants.pageLimit
-
+        
         // When
-        let user = gitHubAPIUsersResponseHandler?.users.first
-        XCTAssertTrue((user != nil))
+        let expectation1 = XCTestExpectation(description: "Should return items in 10 seconds")
+        let expectation2 = XCTestExpectation(description: "Should return more than 20 items after 10 seconds")
         
-        let gitHubAPIReposResponseHandler = GitHubAPIRepoResponseHandler(user: user!, url: user!.reposURL ?? "")
-        let expectation = XCTestExpectation(description: "Should return items after 5 seconds")
-        
-        gitHubAPIReposResponseHandler.$repos
-            .dropFirst()
+        viewModel?.$repos
             .sink { returnedItems in
-                expectation.fulfill()
+                if returnedItems.count > 0 {
+                    expectation1.fulfill()
+                }
             }
             .store(in: &cancellables)
+            
+        viewModel?.getRepos()
         
-        gitHubAPIReposResponseHandler.loadMoreRepos()
+        wait(for: [expectation1], timeout: 10)
+        XCTAssertGreaterThan(viewModel!.repos.count, 0)
         
-        // Then
-        wait(for: [expectation], timeout: 5)
-        XCTAssertGreaterThan(gitHubAPIReposResponseHandler.repos.count, numberOfRepos)
+        viewModel?.$repos
+            .sink { returnedItems in
+                if returnedItems.count > ViewModelConstants.pageLimit {
+                    expectation2.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+            
+        viewModel?.loadMoreRepos()
+        
+        // Then 
+        wait(for: [expectation2], timeout: 10)
+        XCTAssertGreaterThan(viewModel!.repos.count, ViewModelConstants.pageLimit)
     }
+    
 }

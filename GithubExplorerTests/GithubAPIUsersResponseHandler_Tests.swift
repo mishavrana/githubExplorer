@@ -20,6 +20,7 @@ final class GithubAPIUsersResponseHandler_Tests: XCTestCase {
     }
 
     override func tearDownWithError() throws {
+        viewModel?.releaseCache()
         viewModel = nil
     }
     
@@ -30,37 +31,53 @@ final class GithubAPIUsersResponseHandler_Tests: XCTestCase {
         let expectation = XCTestExpectation(description: "Should return items after 5 seconds")
         
         viewModel?.$users
-            .dropFirst()
             .sink { returnItems in
-                expectation.fulfill()
+                if returnItems.count > 0 {
+                    expectation.fulfill()
+                }
             }
             .store(in: &cancellables)
         
         viewModel?.getUsers()
         
         // Then
-        wait(for: [expectation], timeout: 5)
+        wait(for: [expectation], timeout: 10)
         XCTAssertGreaterThan(viewModel!.users.count, 0)
     }
     
     func test_GithubAPIUsersResponseHandler_loadMoreUsers_shouldReturnMoreItemsThanFromTheStart() {
         // Given
-        let numberOfUsers = viewModel?.users.count ?? ViewModelConstants.pageLimit
-        // When
-        let expectation = XCTestExpectation(description: "Should return more than 20 items after 5 seconds")
         
+        // When
+        let expectation1 = XCTestExpectation(description: "Should return items in 10 seconds")
+        let expectation2 = XCTestExpectation(description: "Should return more than 20 items after 10 seconds")
+    
         viewModel?.$users
-            .dropFirst()
             .sink { returnItems in
-                expectation.fulfill()
+                if returnItems.count > 0 {
+                    expectation1.fulfill()
+                }
             }
             .store(in: &cancellables)
-
+        
+        viewModel?.getUsers()
+        
+        wait(for: [expectation1], timeout: 10)
+        XCTAssertGreaterThan(viewModel!.users.count, 0)
+        
+        viewModel?.$users
+            .sink { returnItems in
+                if returnItems.count > ViewModelConstants.pageLimit {
+                    expectation2.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+        
         viewModel?.loadMoreUsers()
         
         // Then
-        wait(for: [expectation], timeout: 5)
-        XCTAssertGreaterThan(viewModel!.users.count, numberOfUsers)
+        wait(for: [expectation2], timeout: 10)
+        XCTAssertGreaterThan(viewModel!.users.count, ViewModelConstants.pageLimit)
     }
     
 }
